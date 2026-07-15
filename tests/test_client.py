@@ -285,3 +285,147 @@ def test_dynamic_retry_after_fallback_openai_headers(mock_openai, sample_config)
     cooldown_expiry = client._cooldowns["openai"]
     assert cooldown_expiry >= start_time + 12.0
     assert cooldown_expiry <= start_time + 13.0
+
+
+@patch("llmswitch.client.OpenAI")
+def test_routing_strategy_round_robin(mock_openai):
+    config = LLMSwitchConfig(
+        alias="gpt-4o",
+        strategy="round_robin",
+        endpoints=[
+            Endpoint(
+                provider="openai",
+                base_url="https://api.a.com",
+                api_key="sk-a",
+                model="m",
+            ),
+            Endpoint(
+                provider="openrouter",
+                base_url="https://api.b.com",
+                api_key="sk-b",
+                model="m",
+            ),
+            Endpoint(
+                provider="anthropic",
+                base_url="https://api.c.com",
+                api_key="sk-c",
+                model="m",
+            ),
+        ],
+    )
+
+    mock_a = MagicMock()
+    mock_a.chat.completions.create.return_value = "res_a"
+    mock_b = MagicMock()
+    mock_b.chat.completions.create.return_value = "res_b"
+    mock_c = MagicMock()
+    mock_c.chat.completions.create.return_value = "res_c"
+
+    # We map mock_openai instantiations to their respective mocks
+    def get_mock_client(base_url, api_key):
+        if "api.a.com" in base_url:
+            return mock_a
+        elif "api.b.com" in base_url:
+            return mock_b
+        elif "api.c.com" in base_url:
+            return mock_c
+        return MagicMock()
+
+    mock_openai.side_effect = get_mock_client
+
+    client = Client(config)
+
+    # 1st call: Should route to A first (index 0)
+    assert client.chat.completions.create(model="gpt-4o", messages=[]) == "res_a"
+    mock_a.chat.completions.create.assert_called_once()
+    mock_b.chat.completions.create.assert_not_called()
+    mock_c.chat.completions.create.assert_not_called()
+
+    mock_a.chat.completions.create.reset_mock()
+
+    # 2nd call: Should route to B first (index 1)
+    assert client.chat.completions.create(model="gpt-4o", messages=[]) == "res_b"
+    mock_a.chat.completions.create.assert_not_called()
+    mock_b.chat.completions.create.assert_called_once()
+    mock_c.chat.completions.create.assert_not_called()
+
+    mock_b.chat.completions.create.reset_mock()
+
+    # 3rd call: Should route to C first (index 2)
+    assert client.chat.completions.create(model="gpt-4o", messages=[]) == "res_c"
+    mock_a.chat.completions.create.assert_not_called()
+    mock_b.chat.completions.create.assert_not_called()
+    mock_c.chat.completions.create.assert_called_once()
+
+    mock_c.chat.completions.create.reset_mock()
+
+    # 4th call: Should cycle back to A first (index 0)
+    assert client.chat.completions.create(model="gpt-4o", messages=[]) == "res_a"
+    mock_a.chat.completions.create.assert_called_once()
+
+
+@patch("llmswitch.client.OpenAI")
+def test_routing_strategy_random(mock_openai):
+    config = LLMSwitchConfig(
+        alias="gpt-4o",
+        strategy="random",
+        endpoints=[
+            Endpoint(
+                provider="openai",
+                base_url="https://api.a.com",
+                api_key="sk-a",
+                model="m",
+            ),
+            Endpoint(
+                provider="openrouter",
+                base_url="https://api.b.com",
+                api_key="sk-b",
+                model="m",
+            ),
+            Endpoint(
+                provider="anthropic",
+                base_url="https://api.c.com",
+                api_key="sk-c",
+                model="m",
+            ),
+        ],
+    )
+
+    mock_a = MagicMock()
+    mock_a.chat.completions.create.return_value = "res"
+    mock_b = MagicMock()
+    mock_b.chat.completions.create.return_value = "res"
+    mock_c = MagicMock()
+    mock_c.chat.completions.create.return_value = "res"
+
+    def get_mock_client(base_url, api_key):
+        if "api.a.com" in base_url:
+            return mock_a
+        elif "api.b.com" in base_url:
+            return mock_b
+        elif "api.c.com" in base_url:
+            return mock_c
+        return MagicMock()
+
+    mock_openai.side_effect = get_mock_client
+
+    client = Client(config)
+
+    first_called_endpoints = set()
+
+    for _ in range(30):
+        mock_a.chat.completions.create.reset_mock()
+        mock_b.chat.completions.create.reset_mock()
+        mock_c.chat.completions.create.reset_mock()
+
+        client.chat.completions.create(model="gpt-4o", messages=[])
+
+        if mock_a.chat.completions.create.called:
+            first_called_endpoints.add("a")
+        elif mock_b.chat.completions.create.called:
+            first_called_endpoints.add("b")
+        elif mock_c.chat.completions.create.called:
+            first_called_endpoints.add("c")
+
+    # Over 30 runs, random routing should hit more than one starting endpoint (probabilistically guaranteed)
+    assert len(first_called_endpoints) > 1

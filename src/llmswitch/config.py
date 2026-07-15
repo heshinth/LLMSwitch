@@ -23,6 +23,10 @@ class LLMSwitchConfig(BaseModel):
     endpoints: List[Endpoint] = Field(
         ..., description="List of fallback targets for this alias"
     )
+    strategy: str = Field(
+        "priority",
+        description="Routing strategy: 'priority', 'round_robin', or 'random'",
+    )
 
 
 def test_logging():

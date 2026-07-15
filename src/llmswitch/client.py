@@ -1,4 +1,6 @@
 import time
+import random
+import threading
 from typing import List, Union, Dict, Any, Generator, AsyncGenerator
 from openai import OpenAI, AsyncOpenAI, OpenAIError
 from loguru import logger
@@ -26,19 +28,44 @@ class CircuitBreaker:
 
 
 class Router:
-    """Selects and filters active endpoints for a given model alias."""
+    """Selects and filters active endpoints for a given model alias using routing strategies."""
 
     def __init__(
-        self, routing_map: Dict[str, List[Endpoint]], circuit_breaker: CircuitBreaker
+        self,
+        routing_configs: Dict[str, LLMSwitchConfig],
+        circuit_breaker: CircuitBreaker,
     ):
-        self._routing_map = routing_map
+        self._configs = routing_configs
         self._circuit_breaker = circuit_breaker
+        self._rr_indices: Dict[str, int] = {}
+        self._lock = threading.Lock()
 
     def get_active_endpoints(self, model: str) -> List[Endpoint]:
-        candidates = self._routing_map.get(model)
-        if not candidates:
+        config = self._configs.get(model)
+        if not config:
             raise ValueError(f"Model alias '{model}' is not registered.")
-        return candidates
+
+        endpoints = list(config.endpoints)
+        strategy = config.strategy.lower()
+
+        if not endpoints:
+            return []
+
+        if strategy == "random":
+            # Shuffle endpoints to choose randomly
+            shuffled = endpoints.copy()
+            random.shuffle(shuffled)
+            return shuffled
+
+        elif strategy == "round_robin":
+            # Rotate start index to distribute load
+            with self._lock:
+                idx = self._rr_indices.get(model, 0)
+                self._rr_indices[model] = (idx + 1) % len(endpoints)
+            return endpoints[idx:] + endpoints[:idx]
+
+        else:  # priority (default)
+            return endpoints
 
 
 class ClientRegistry:
@@ -225,13 +252,13 @@ class Client:
 
     def __init__(self, configs: Union[LLMSwitchConfig, List[LLMSwitchConfig]]):
         self.configs = configs if isinstance(configs, list) else [configs]
-        self._routing_map: Dict[str, List[Endpoint]] = {
-            c.alias: c.endpoints for c in self.configs
+        self._routing_configs: Dict[str, LLMSwitchConfig] = {
+            c.alias: c for c in self.configs
         }
         self._cooldowns: Dict[str, float] = {}
 
         self._circuit_breaker = CircuitBreaker(self._cooldowns)
-        self._router = Router(self._routing_map, self._circuit_breaker)
+        self._router = Router(self._routing_configs, self._circuit_breaker)
         self._client_registry = ClientRegistry()
         self._rate_limit_manager = RateLimitManager()
 
@@ -403,13 +430,13 @@ class AsyncClient:
 
     def __init__(self, configs: Union[LLMSwitchConfig, List[LLMSwitchConfig]]):
         self.configs = configs if isinstance(configs, list) else [configs]
-        self._routing_map: Dict[str, List[Endpoint]] = {
-            c.alias: c.endpoints for c in self.configs
+        self._routing_configs: Dict[str, LLMSwitchConfig] = {
+            c.alias: c for c in self.configs
         }
         self._cooldowns: Dict[str, float] = {}
 
         self._circuit_breaker = CircuitBreaker(self._cooldowns)
-        self._router = Router(self._routing_map, self._circuit_breaker)
+        self._router = Router(self._routing_configs, self._circuit_breaker)
         self._client_registry = ClientRegistry()
         self._rate_limit_manager = RateLimitManager()
 
