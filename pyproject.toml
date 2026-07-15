@@ -1,5 +1,5 @@
 [project]
-name = "llmswitch"
+name = "llmswitch-client"
 version = "0.0.1"
 description = "A production-ready routing, fallback, and rate-limiting client for OpenAI-compatible LLM endpoints."
 readme = "README.md"
@@ -9,6 +9,7 @@ authors = [
 license = { file = "LICENSE" }
 requires-python = ">=3.12"
 classifiers = [
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3",
@@ -31,6 +32,9 @@ Repository = "https://github.com/heshinth/LLMSwitch"
 [build-system]
 requires = ["uv_build>=0.11.16,<0.12.0"]
 build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "llmswitch"
 
 [dependency-groups]
 dev = [

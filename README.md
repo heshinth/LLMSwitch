@@ -20,12 +20,12 @@ A lightweight, production-ready routing and fallback client for LLM providers. I
 
 Add it to your Python project using `pip`:
 ```bash
-pip install llmswitch
+pip install llmswitch-client
 ```
 
 Or using `uv`:
 ```bash
-uv add llmswitch
+uv add llmswitch-client
 ```
 
 ---
