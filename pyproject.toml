@@ -1,7 +1,7 @@
 [project]
 name = "llmswitch-client"
 version = "0.0.1"
-description = "A production-ready routing, fallback, and rate-limiting client for OpenAI-compatible LLM endpoints."
+description = "A routing, fallback, and rate-limiting client for OpenAI-compatible LLM endpoints."
 readme = "README.md"
 authors = [
     { name = "Heshinth P", email = "heshinth@gmail.com" }
