@@ -5,7 +5,7 @@ from typing import List, Union, Dict, Any, Generator, AsyncGenerator
 from openai import OpenAI, AsyncOpenAI, OpenAIError
 from loguru import logger
 
-from llmswitch.config import LLMSwitchConfig, Endpoint, test_logging
+from llmswitch.config import LLMSwitchConfig, Endpoint, test_logging  # noqa: F401
 from llmswitch.errors import ErrorClassifier
 from llmswitch.rate_limit import RateLimitManager, estimate_tokens
 

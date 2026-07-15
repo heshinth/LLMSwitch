@@ -1,17 +1,32 @@
 [project]
 name = "llmswitch"
-version = "0.1.0"
-description = "Dynamic rate-limit router for OpenAI-compatible LLM endpoints"
+version = "0.0.1"
+description = "A production-ready routing, fallback, and rate-limiting client for OpenAI-compatible LLM endpoints."
 readme = "README.md"
 authors = [
     { name = "Heshinth P", email = "heshinth@gmail.com" }
 ]
+license = { file = "LICENSE" }
 requires-python = ">=3.12"
+classifiers = [
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+keywords = ["openai", "llm", "routing", "fallback", "circuit-breaker", "load-balancer", "rate-limiting", "async"]
 dependencies = [
     "loguru>=0.7.3",
     "openai>=2.45.0",
     "pydantic>=2.13.4",
 ]
+
+[project.urls]
+Homepage = "https://github.com/heshinth/LLMSwitch"
+Repository = "https://github.com/heshinth/LLMSwitch"
+"Bug Tracker" = "https://github.com/heshinth/LLMSwitch/issues"
 
 [build-system]
 requires = ["uv_build>=0.11.16,<0.12.0"]
