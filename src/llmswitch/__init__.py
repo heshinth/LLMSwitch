@@ -1,5 +1,13 @@
 from llmswitch.logger import logger, enable_logging
-from llmswitch.client import test_logging, Client, Chat, Completions, AsyncClient, AsyncChat, AsyncCompletions
+from llmswitch.client import (
+    test_logging,
+    Client,
+    Chat,
+    Completions,
+    AsyncClient,
+    AsyncChat,
+    AsyncCompletions,
+)
 from llmswitch.config import LLMSwitchConfig, Endpoint
 
 __all__ = [
@@ -15,6 +23,3 @@ __all__ = [
     "LLMSwitchConfig",
     "Endpoint",
 ]
-
-
-
