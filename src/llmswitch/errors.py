@@ -1,12 +1,16 @@
 from openai import OpenAIError
 
+
 class ErrorClassifier:
     """Helper to classify API errors and parse rate limit metadata."""
+
     @staticmethod
     def is_rate_limit(error: Exception) -> bool:
         if not isinstance(error, OpenAIError):
             return False
-        return "rate_limit" in str(error).lower() or (hasattr(error, "status_code") and error.status_code == 429)
+        return "rate_limit" in str(error).lower() or (
+            hasattr(error, "status_code") and error.status_code == 429
+        )
 
     @staticmethod
     def get_retry_after(error: Exception) -> float:
@@ -15,7 +19,7 @@ class ErrorClassifier:
             return 60.0  # default fallback
 
         headers = getattr(error.response, "headers", {})
-        
+
         # Standard HTTP Header
         if "retry-after" in headers:
             try:
