@@ -52,7 +52,7 @@ class Chat:
     def __init__(self, routing_map: Dict[str, List[Endpoint]], cooldowns: Dict[str, float]):
         self.completions = Completions(routing_map, cooldowns)
 
-class SwitchClient:
+class Client:
     def __init__(self, configs: Union[LLMSwitchConfig, List[LLMSwitchConfig]]):
         self.configs = configs if isinstance(configs, list) else [configs]
         self._routing_map: Dict[str, List[Endpoint]] = {c.alias: c.endpoints for c in self.configs}
